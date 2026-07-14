@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>Posture Trainer</title>
+<title>Posture Trainer v4</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Cormorant+Garamond:ital,wght@0,300;0,500;0,600;1,300&display=swap" rel="stylesheet">
 <style>
@@ -350,6 +350,7 @@
 
 <!-- NAV -->
 <nav>
+  <div id="debug-log" style="position:fixed;top:0;left:0;right:0;background:#1a1a18;color:#b8e04a;font-family:monospace;font-size:10px;padding:4px 8px;z-index:999;display:block;word-break:break-all;"></div>
   <button class="active" onclick="showScreen('stretch')" id="nav-stretch">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 3v18M3 12h18" stroke-linecap="round"/></svg>
     Stretch
@@ -387,11 +388,22 @@ function todayStr() {
 function log(action, params={}) {
   const cb = '_log' + Math.random().toString(36).slice(2);
   const url = SCRIPT_URL + '?' + new URLSearchParams({ action, callback: cb, ...params }).toString();
-  window[cb] = () => { delete window[cb]; const s = document.getElementById(cb); if(s) s.remove(); };
+  const debug = document.getElementById('debug-log');
+  if(debug) debug.textContent = `Calling: ${action} ${JSON.stringify(params)}`;
+  window[cb] = (data) => {
+    delete window[cb];
+    const s = document.getElementById(cb);
+    if(s) s.remove();
+    if(debug) debug.textContent = `✓ ${action} response: ${JSON.stringify(data)}`;
+  };
   const s = document.createElement('script');
   s.id = cb;
   s.src = url;
-  s.onerror = () => { delete window[cb]; s.remove(); };
+  s.onerror = (e) => {
+    delete window[cb];
+    s.remove();
+    if(debug) debug.textContent = `✗ ${action} failed: script load error`;
+  };
   document.head.appendChild(s);
 }
 
