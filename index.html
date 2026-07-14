@@ -385,8 +385,14 @@ function todayStr() {
 }
 
 function log(action, params={}) {
-  const qs = new URLSearchParams({ action, ...params }).toString();
-  fetch(SCRIPT_URL + '?' + qs, { mode: 'no-cors' }).catch(()=>{});
+  const cb = '_log' + Math.random().toString(36).slice(2);
+  const url = SCRIPT_URL + '?' + new URLSearchParams({ action, callback: cb, ...params }).toString();
+  window[cb] = () => { delete window[cb]; const s = document.getElementById(cb); if(s) s.remove(); };
+  const s = document.createElement('script');
+  s.id = cb;
+  s.src = url;
+  s.onerror = () => { delete window[cb]; s.remove(); };
+  document.head.appendChild(s);
 }
 
 function beep(freq=660, dur=0.1) {
