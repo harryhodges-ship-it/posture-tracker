@@ -4,7 +4,7 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://fonts.gstatic.com; script-src 'self' 'unsafe-inline' https://script.google.com; img-src * data:; connect-src *;">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>Posture Trainer v6</title>
+<title>Posture Trainer v8</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Cormorant+Garamond:ital,wght@0,300;0,500;0,600;1,300&display=swap" rel="stylesheet">
 <style>
@@ -1020,21 +1020,52 @@ function calendarHTML(log, mode='binary', target=8) {
   startOfWeek.setDate(today.getDate()-((dow+6)%7));
   startOfWeek.setHours(0,0,0,0);
 
-  let html='<div class="cal-grid">';
+  const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  let lastMonth=-1;
+
+  // Build rows: [monthLabel, 7 day cells]
+  let rows=[];
+  for(let w=11;w>=0;w--){
+    const days=[];
+    for(let d=0;d<7;d++){
+      const day=new Date(startOfWeek);
+      day.setDate(startOfWeek.getDate()-w*7+d);
+      days.push(day);
+    }
+    rows.push(days);
+  }
+
+  let html='<div style="display:grid;grid-template-columns:28px repeat(7,1fr);gap:3px;">';
+
+  // Header row
+  html+='<div></div>';
   ['M','T','W','T','F','S','S'].forEach(d=>{
     html+=`<div class="cal-day-label">${d}</div>`;
   });
 
-  for(let w=11;w>=0;w--){
-    for(let d=0;d<7;d++){
-      const day=new Date(startOfWeek);
-      day.setDate(startOfWeek.getDate()-w*7+d);
+  rows.forEach(function(days){
+    const weekMonth=days[0].getMonth();
+    if(weekMonth!==lastMonth){
+      html+=`<div style="font-family:var(--mono);font-size:0.45rem;color:var(--text-muted);writing-mode:horizontal-tb;text-align:right;padding-right:3px;display:flex;align-items:center;justify-content:flex-end;">${months[weekMonth]}</div>`;
+      lastMonth=weekMonth;
+    } else {
+      html+='<div></div>';
+    }
+
+    days.forEach(function(day){
       const str=`${day.getFullYear()}-${String(day.getMonth()+1).padStart(2,'0')}-${String(day.getDate()).padStart(2,'0')}`;
       const isFuture=day>today;
       const isToday=str===todayStr();
+      const dayNum=day.getDate();
+
       if(mode==='binary'){
         const done=!!log[str];
-        html+=`<div class="cal-cell${isFuture?' future':done?' done':isToday?' today-empty':''}"></div>`;
+        const bg=isFuture?'transparent':done?'var(--accent)':isToday?'#252523':'#1a1a18';
+        const color=done?'#0c0c0b':isToday?'var(--text-dim)':'var(--text-muted)';
+        const border=isToday&&!done?'border:1px solid #3a3a30;':'';
+        html+=`<div class="cal-cell" style="background:${bg};${border};display:flex;align-items:center;justify-content:center;">
+          <span style="font-family:var(--mono);font-size:0.45rem;color:${isFuture?'transparent':color};line-height:1;">${dayNum}</span>
+        </div>`;
       } else {
         const count=log[str]||0;
         const p=Math.min(1,count/target);
@@ -1045,10 +1076,14 @@ function calendarHTML(log, mode='binary', target=8) {
           bg=`rgb(${r2},${g2},${b2})`;
         }
         const border=isToday&&count===0?'border:1px solid #3a3a30;':'';
-        html+=`<div class="cal-cell" style="background:${bg};${border}"></div>`;
+        const textColor=count>0?(p>0.6?'#0c0c0b':'var(--text-dim)'):'var(--text-muted)';
+        html+=`<div class="cal-cell" style="background:${bg};${border};display:flex;align-items:center;justify-content:center;">
+          <span style="font-family:var(--mono);font-size:0.45rem;color:${isFuture?'transparent':textColor};line-height:1;">${count>0?count:dayNum}</span>
+        </div>`;
       }
-    }
-  }
+    });
+  });
+
   return html+'</div>';
 }
 
@@ -1199,6 +1234,18 @@ function logExToday() {
   log('logExercise',{date:todayStr()});
   loadTracker();
 }
+
+
+// ── Backfill historical stretch sessions ─────────────────────
+(function() {
+  const BACKFILL_DATES = ["2026-06-01","2026-06-02","2026-06-03","2026-06-04","2026-06-05","2026-06-06","2026-06-07","2026-06-08","2026-06-09","2026-06-10","2026-06-11","2026-06-14","2026-06-15","2026-06-16","2026-06-17","2026-06-18","2026-06-19","2026-06-20","2026-06-21","2026-06-22","2026-06-23","2026-06-24","2026-06-25","2026-06-26","2026-06-27","2026-06-28","2026-06-29","2026-06-30","2026-07-01","2026-07-02","2026-07-04","2026-07-05","2026-07-06","2026-07-07","2026-07-08","2026-07-11","2026-07-14"];
+  if (!localStorage.getItem('stretch-backfilled')) {
+    const existing = JSON.parse(localStorage.getItem('stretch-log') || '{}');
+    BACKFILL_DATES.forEach(function(d) { existing[d] = true; });
+    localStorage.setItem('stretch-log', JSON.stringify(existing));
+    localStorage.setItem('stretch-backfilled', '1');
+  }
+})();
 
 // ═══════════════════════════════════════════════════════════════
 // INIT
