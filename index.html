@@ -4,7 +4,7 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://fonts.gstatic.com; script-src 'self' 'unsafe-inline' https://script.google.com; img-src * data:; connect-src *;">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>Posture Trainer v5</title>
+<title>Posture Trainer v6</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Cormorant+Garamond:ital,wght@0,300;0,500;0,600;1,300&display=swap" rel="stylesheet">
 <style>
@@ -351,7 +351,6 @@
 
 <!-- NAV -->
 <nav>
-  <div id="debug-log" style="position:fixed;top:0;left:0;right:0;background:#1a1a18;color:#b8e04a;font-family:monospace;font-size:10px;padding:4px 8px;z-index:999;display:block;word-break:break-all;"></div>
   <button class="active" onclick="showScreen('stretch')" id="nav-stretch">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 3v18M3 12h18" stroke-linecap="round"/></svg>
     Stretch
@@ -374,7 +373,7 @@
 // ═══════════════════════════════════════════════════════════════
 // CONFIG
 // ═══════════════════════════════════════════════════════════════
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycby80dUsY7H8r-F6FXF6HaudFThCaDglp1Gnkme_9wh7yoOw4FsE2DEF7GNTU8AKLaBW/exec";
+// Storage: localStorage (persists on this device)
 const CHIN_TUCK_TARGET = 8;
 const MILESTONE_DAYS = 42;
 
@@ -386,37 +385,29 @@ function todayStr() {
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 }
 
+// ── localStorage storage ──────────────────────────────────────
+function getLog(key) {
+  try { return JSON.parse(localStorage.getItem(key) || '{}'); } catch { return {}; }
+}
+function setLog(key, data) {
+  try { localStorage.setItem(key, JSON.stringify(data)); } catch {}
+}
+
 function log(action, params={}) {
-  const url = SCRIPT_URL + '?' + new URLSearchParams({ action, ...params }).toString();
-  const debug = document.getElementById('debug-log');
-  if(debug) debug.textContent = `Calling: ${action} ${JSON.stringify(params)}`;
-
-  // Method 1: JSONP via script tag
-  const cb = '_log' + Math.random().toString(36).slice(2);
-  const urlWithCb = url + '&callback=' + cb;
-  let settled = false;
-
-  window[cb] = (data) => {
-    settled = true;
-    delete window[cb];
-    const s = document.getElementById(cb);
-    if(s) s.remove();
-    if(debug) debug.textContent = `✓ ${action}: ${JSON.stringify(data)}`;
-  };
-
-  const s = document.createElement('script');
-  s.id = cb;
-  s.src = urlWithCb;
-  s.onerror = () => {
-    delete window[cb];
-    s.remove();
-    if(debug) debug.textContent = `✗ script blocked, trying fetch...`;
-    // Method 2: plain fetch no-cors
-    fetch(url, { mode: 'no-cors' })
-      .then(() => { if(debug) debug.textContent = `✓ ${action} sent (no-cors)`; })
-      .catch(e => { if(debug) debug.textContent = `✗ fetch failed: ${e.message}`; });
-  };
-  document.head.appendChild(s);
+  const date = params.date || todayStr();
+  if (action === 'logStretch') {
+    const d = getLog('stretch-log');
+    d[date] = true;
+    setLog('stretch-log', d);
+  } else if (action === 'logExercise') {
+    const d = getLog('exercise-log');
+    d[date] = true;
+    setLog('exercise-log', d);
+  } else if (action === 'logChinTuck') {
+    const d = getLog('chin-log');
+    d[date] = (d[date] || 0) + 1;
+    setLog('chin-log', d);
+  }
 }
 
 function beep(freq=660, dur=0.1) {
@@ -1061,26 +1052,12 @@ function calendarHTML(log, mode='binary', target=8) {
   return html+'</div>';
 }
 
-async function loadTracker() {
-  el('tracker-content').innerHTML='<div style="font-family:var(--mono);font-size:0.65rem;color:var(--text-dim);text-align:center;padding:3rem 0;">Loading from Google Sheets…</div>';
+function loadTracker() {
+  const stretchLog = getLog('stretch-log');
+  const exerciseLog = getLog('exercise-log');
+  const chinLog = getLog('chin-log');
 
   try {
-    const data = await new Promise((resolve,reject)=>{
-      const cb='_cb'+Math.random().toString(36).slice(2);
-      const url=SCRIPT_URL+'?'+new URLSearchParams({action:'read',callback:cb});
-      let done=false;
-      const timeout=setTimeout(()=>{if(!done){done=true;delete window[cb];reject(new Error('Timed out'));}},15000);
-      window[cb]=(d)=>{if(!done){done=true;clearTimeout(timeout);delete window[cb];const s=document.head.querySelector(`script[src="${url}"]`);if(s)s.remove();resolve(d);}};
-      const s=document.createElement('script');
-      s.src=url;
-      s.onerror=()=>{if(!done){done=true;clearTimeout(timeout);reject(new Error('Network error'));}};
-      document.head.appendChild(s);
-    });
-
-    const stretchLog={}, exerciseLog={}, chinLog={};
-    (data.stretches||[]).forEach(d=>{stretchLog[d]=true;});
-    (data.exercises||[]).forEach(d=>{exerciseLog[d]=true;});
-    Object.entries(data.chinTucks||{}).forEach(([k,v])=>{chinLog[k]=v;});
 
     const today=todayStr();
     const stretchDoneToday=!!stretchLog[today];
@@ -1209,18 +1186,18 @@ async function loadTracker() {
     el('tracker-content').innerHTML=html;
 
   } catch(e) {
-    el('tracker-content').innerHTML=`<div style="font-family:var(--mono);font-size:0.6rem;color:#e05050;background:#1e1010;border:1px solid #5a1a1a;border-radius:6px;padding:0.9rem;">Could not load data: ${e.message}<br><br>Make sure the Apps Script is deployed and the URL is correct.</div>`;
+    el('tracker-content').innerHTML=`<div style="font-family:var(--mono);font-size:0.6rem;color:#e05050;padding:1rem;">Error loading tracker: ${e.message}</div>`;
   }
 }
 
 function logStretchToday() {
   log('logStretch',{date:todayStr()});
-  setTimeout(loadTracker,1000);
+  loadTracker();
 }
 
 function logExToday() {
   log('logExercise',{date:todayStr()});
-  setTimeout(loadTracker,1000);
+  loadTracker();
 }
 
 // ═══════════════════════════════════════════════════════════════
