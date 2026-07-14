@@ -1,0 +1,1204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Posture Trainer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Cormorant+Garamond:ital,wght@0,300;0,500;0,600;1,300&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0c0c0b;
+    --surface: #161614;
+    --border: #252523;
+    --accent: #b8e04a;
+    --accent-dim: #7aaa20;
+    --text: #e4e0d8;
+    --text-dim: #6a6a5a;
+    --text-muted: #3a3a30;
+    --red: #e05050;
+    --green-done: #1a2210;
+    --green-border: #3a5a1a;
+    --radius: 8px;
+    --mono: 'DM Mono', monospace;
+    --serif: 'Cormorant Garamond', Georgia, serif;
+  }
+
+  html, body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--serif);
+    min-height: 100vh;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* NAV */
+  nav {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: #0a0a09;
+    border-top: 1px solid var(--border);
+    display: flex;
+    z-index: 100;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  nav button {
+    flex: 1;
+    padding: 12px 4px 10px;
+    background: none;
+    border: none;
+    color: #6a6a5a;
+    font-family: var(--mono);
+    font-size: 0.55rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    transition: color 0.2s;
+  }
+  nav button.active { color: var(--accent); }
+  nav button svg { width: 20px; height: 20px; }
+
+  /* SCREENS */
+  .screen { display: none; padding: 1.5rem 1rem 6rem; max-width: 480px; margin: 0 auto; }
+  .screen.active { display: block; }
+
+  /* TYPOGRAPHY */
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 0.6rem;
+    letter-spacing: 0.18em;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    margin-bottom: 0.3rem;
+  }
+  .page-title {
+    font-size: 2rem;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+    margin-bottom: 0.3rem;
+  }
+  .page-sub {
+    font-family: var(--mono);
+    font-size: 0.62rem;
+    color: var(--text-dim);
+    margin-bottom: 1.75rem;
+  }
+
+  /* CARDS */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.1rem 1.25rem;
+    margin-bottom: 0.75rem;
+  }
+  .card-title {
+    font-size: 1.1rem;
+    font-weight: 500;
+    margin-bottom: 0.25rem;
+  }
+  .card-sub {
+    font-family: var(--mono);
+    font-size: 0.58rem;
+    color: var(--text-dim);
+    letter-spacing: 0.06em;
+    margin-bottom: 0.5rem;
+  }
+  .card-instruction {
+    font-size: 0.85rem;
+    color: #8a8678;
+    line-height: 1.65;
+    font-style: italic;
+  }
+  .card-dose {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    color: var(--accent);
+    text-align: right;
+    margin-left: auto;
+  }
+  .card-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.25rem; }
+
+  /* TAGS */
+  .tag {
+    font-family: var(--mono);
+    font-size: 0.6rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 0.2rem 0.5rem;
+    border-radius: 3px;
+    display: inline-block;
+  }
+  .tag-blue { background: #1e3040; color: #88c8e0; }
+  .tag-grey { background: #252523; color: #6a6a5a; }
+  .tag-left { background: #1e3030; color: #80d0b0; }
+  .tag-right { background: #301e30; color: #d080c0; }
+  .tag-rest { background: #1e1e18; color: #7a7a6a; }
+  .tag-release { background: #1e1e18; color: #9a8a6a; }
+
+  .tags { display: flex; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap; }
+
+  /* BUTTONS */
+  .btn {
+    width: 100%;
+    padding: 1rem;
+    border: none;
+    border-radius: var(--radius);
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-bottom: 0.5rem;
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn-primary { background: var(--accent); color: #0c0c0b; }
+  .btn-secondary { background: transparent; color: var(--text-dim); border: 1px solid var(--border); }
+  .btn-ghost { background: transparent; color: var(--text-muted); border: 1px solid var(--border); padding: 0.7rem; font-size: 0.6rem; }
+  .btn:disabled { opacity: 0.35; cursor: default; }
+
+  /* PROGRESS BAR */
+  .progress-wrap { margin-bottom: 1.25rem; }
+  .progress-label { display: flex; justify-content: space-between; margin-bottom: 0.35rem; }
+  .progress-label span { font-family: var(--mono); font-size: 0.55rem; color: var(--text-muted); }
+  .progress-label span:last-child { color: var(--text-dim); }
+  .progress-bar { height: 2px; background: #1e1e1c; border-radius: 2px; overflow: hidden; }
+  .progress-fill { height: 100%; background: var(--accent); border-radius: 2px; transition: width 0.4s ease; }
+
+  /* BIG NUMBER */
+  .big-num {
+    font-size: 5.5rem;
+    font-weight: 600;
+    line-height: 1;
+    letter-spacing: -0.04em;
+    text-align: center;
+  }
+  .big-num.red { color: var(--red); }
+
+  /* REP DOTS */
+  .rep-dots { display: flex; gap: 5px; justify-content: center; flex-wrap: wrap; margin: 1rem 0; }
+  .rep-dot {
+    width: 18px; height: 18px; border-radius: 50%;
+    background: #1e1e1c;
+    transition: background 0.15s;
+  }
+  .rep-dot.done { background: var(--accent); }
+  .rep-dot.active { background: #1e1e1c; border: 1px solid #b8e04a55; }
+
+  /* RING */
+  .ring-wrap { display: flex; justify-content: center; margin: 1rem 0; }
+
+  /* CUE */
+  .cue {
+    font-family: var(--mono);
+    font-size: 0.62rem;
+    color: var(--accent);
+    letter-spacing: 0.04em;
+    margin-top: 0.75rem;
+  }
+
+  /* UP NEXT */
+  .up-next {
+    background: #111110;
+    border: 1px solid #1e1e1c;
+    border-radius: 6px;
+    padding: 0.7rem 1rem;
+    margin-top: 0.75rem;
+  }
+  .up-next-label { font-family: var(--mono); font-size: 0.55rem; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.2rem; }
+  .up-next-name { font-family: var(--mono); font-size: 0.65rem; color: var(--text-dim); margin-bottom: 0.4rem; }
+  .up-next-instruction { font-size: 0.8rem; color: #6a6460; line-height: 1.6; font-style: italic; }
+
+  /* DONE CARD */
+  .done-card {
+    background: var(--surface);
+    border: 1px solid #2e3a20;
+    border-radius: 10px;
+    padding: 2.5rem 1.5rem;
+    text-align: center;
+  }
+  .done-title { font-size: 1.8rem; font-weight: 300; margin-bottom: 0.5rem; }
+  .done-sub { font-family: var(--mono); font-size: 0.62rem; color: var(--text-dim); letter-spacing: 0.1em; margin-bottom: 0.4rem; }
+  .done-logged { font-family: var(--mono); font-size: 0.6rem; color: var(--accent); letter-spacing: 0.1em; margin-bottom: 1.5rem; }
+
+  /* TIMER CARD */
+  .timer-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.75rem 1.5rem 1.5rem;
+    margin-bottom: 1rem;
+    text-align: center;
+  }
+  .timer-label { font-family: var(--mono); font-size: 0.58rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.75rem; }
+  .timer-label.active { color: var(--accent); }
+  .timer-unit { font-family: var(--mono); font-size: 0.55rem; color: var(--text-muted); letter-spacing: 0.1em; margin-bottom: 1.25rem; }
+
+  /* STAT GRID */
+  .stat-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.75rem; margin-bottom: 1.25rem; }
+  .stat-box { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 0.9rem 0.75rem; text-align: center; }
+  .stat-label { font-family: var(--mono); font-size: 0.55rem; letter-spacing: 0.12em; color: var(--text-dim); text-transform: uppercase; margin-bottom: 0.3rem; }
+  .stat-value { font-size: 1.8rem; font-weight: 600; line-height: 1; }
+  .stat-value.accent { color: var(--accent); }
+  .stat-unit { font-family: var(--mono); font-size: 0.55rem; color: var(--text-muted); letter-spacing: 0.08em; margin-top: 0.2rem; }
+
+  /* MILESTONE BAR */
+  .milestone-bar { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem 1.1rem; margin-bottom: 1.25rem; }
+  .milestone-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.6rem; }
+  .milestone-title { font-family: var(--mono); font-size: 0.58rem; letter-spacing: 0.1em; color: var(--text-dim); text-transform: uppercase; }
+  .milestone-pct { font-family: var(--mono); font-size: 0.65rem; color: var(--accent); }
+  .milestone-fill { height: 4px; background: #1e1e1c; border-radius: 4px; overflow: hidden; margin-bottom: 0.5rem; }
+  .milestone-inner { height: 100%; background: linear-gradient(90deg, #4a8a2a, #b8e04a); border-radius: 4px; transition: width 0.6s ease; }
+  .milestone-date { font-family: var(--mono); font-size: 0.55rem; color: var(--text-muted); }
+
+  /* LOG BUTTON AREA */
+  .logged-box { background: var(--green-done); border: 1px solid var(--green-border); border-radius: var(--radius); padding: 0.9rem 1.25rem; display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.25rem; }
+  .logged-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); flex-shrink: 0; }
+  .logged-text { font-family: var(--mono); font-size: 0.62rem; color: var(--accent); letter-spacing: 0.08em; }
+  .logged-date { font-family: var(--mono); font-size: 0.55rem; color: #4a5a2a; margin-top: 0.1rem; }
+
+  /* INSIGHT */
+  .insight-card { background: var(--surface); border: 1px solid var(--border); border-left: 3px solid #b8e04a44; border-radius: var(--radius); padding: 1.1rem 1.25rem; margin-bottom: 1.25rem; }
+  .insight-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.5rem; }
+  .insight-label { font-family: var(--mono); font-size: 0.55rem; letter-spacing: 0.12em; color: var(--text-dim); text-transform: uppercase; }
+  .insight-next { font-family: var(--mono); font-size: 0.55rem; color: #3a5a1a; }
+  .insight-text { font-size: 0.95rem; font-style: italic; color: #b0ac9e; line-height: 1.7; }
+
+  /* CALENDAR */
+  .cal-section { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.1rem; margin-bottom: 1.25rem; }
+  .cal-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.75rem; }
+  .cal-title { font-family: var(--mono); font-size: 0.55rem; letter-spacing: 0.12em; color: var(--text-dim); text-transform: uppercase; }
+  .cal-target { font-family: var(--mono); font-size: 0.55rem; color: var(--text-dim); }
+  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
+  .cal-day-label { font-family: var(--mono); font-size: 0.5rem; color: var(--text-muted); text-align: center; padding-bottom: 4px; }
+  .cal-cell { aspect-ratio: 1; border-radius: 3px; background: #1a1a18; transition: background 0.2s; }
+  .cal-cell.future { background: transparent; }
+  .cal-cell.done { background: var(--accent); }
+  .cal-cell.today-empty { background: #252523; border: 1px solid #3a3a30; }
+  .cal-legend { display: flex; gap: 1rem; margin-top: 0.75rem; flex-wrap: wrap; }
+  .cal-legend-item { display: flex; align-items: center; gap: 0.35rem; }
+  .cal-legend-dot { width: 8px; height: 8px; border-radius: 2px; }
+  .cal-legend-label { font-family: var(--mono); font-size: 0.52rem; color: var(--text-muted); }
+
+  /* TODAY CHIN COUNT */
+  .chin-today { background: #111110; border: 1px solid #1e1e1c; border-radius: 6px; padding: 0.6rem 0.9rem; margin-bottom: 0.9rem; display: flex; justify-content: space-between; align-items: center; }
+  .chin-today-label { font-family: var(--mono); font-size: 0.58rem; color: var(--text-muted); text-transform: uppercase; }
+  .chin-today-count { font-size: 1.4rem; font-weight: 600; }
+  .chin-today-target { font-family: var(--mono); font-size: 0.55rem; color: var(--text-muted); margin-left: 0.3rem; }
+
+  /* SECTION DIVIDER */
+  .section-divider { border-top: 1px solid var(--border); margin: 2.5rem 0 2rem; padding-top: 2rem; }
+
+  /* CONTROLS ROW */
+  .controls { display: flex; gap: 0.75rem; }
+  .controls .btn { margin-bottom: 0; }
+  .btn-icon { padding: 0.9rem 1rem; font-size: 0.75rem; width: auto; flex-shrink: 0; }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════ SCREENS -->
+
+<!-- STRETCH TIMER -->
+<div class="screen active" id="screen-stretch">
+  <div class="eyebrow">Daily Protocol</div>
+  <div class="page-title">Stretch Timer</div>
+  <div class="page-sub">Hip flexors · Pec · Chin tucks · ~6 min</div>
+  <div id="stretch-content"></div>
+</div>
+
+<!-- CHIN TUCK TIMER -->
+<div class="screen" id="screen-chintuck">
+  <div class="eyebrow">Tech Neck Protocol</div>
+  <div class="page-title">Chin Tucks</div>
+  <div class="page-sub">10 reps · 10s hold · 5s rest</div>
+  <div id="ct-today-wrap" style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:0.75rem 1.1rem;margin-bottom:1.25rem;display:flex;justify-content:space-between;align-items:center;">
+    <span style="font-family:var(--mono);font-size:0.58rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.08em;">Sets today</span>
+    <span id="ct-sets-today" style="font-size:1.5rem;font-weight:600;color:var(--text-muted);">0</span>
+  </div>
+  <div id="chintuck-content"></div>
+</div>
+
+<!-- POSTURE EXERCISES -->
+<div class="screen" id="screen-exercises">
+  <div class="eyebrow">Postural Correction</div>
+  <div class="page-title">Strength Exercises</div>
+  <div class="page-sub">Dead Bug · Plank · Glute Bridge · ~15 min</div>
+  <div id="exercises-content"></div>
+</div>
+
+<!-- TRACKER -->
+<div class="screen" id="screen-tracker">
+  <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:2rem;">
+    <div>
+      <div class="eyebrow">Postural Correction</div>
+      <div class="page-title">Tracker</div>
+    </div>
+    <button class="btn btn-ghost btn-icon" onclick="loadTracker()" style="width:auto;margin-bottom:0;">↺ Refresh</button>
+  </div>
+  <div id="tracker-content"><div style="font-family:var(--mono);font-size:0.65rem;color:var(--text-dim);text-align:center;padding:3rem 0;">Loading…</div></div>
+</div>
+
+<!-- NAV -->
+<nav>
+  <button class="active" onclick="showScreen('stretch')" id="nav-stretch">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 3v18M3 12h18" stroke-linecap="round"/></svg>
+    Stretch
+  </button>
+  <button onclick="showScreen('chintuck')" id="nav-chintuck">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="8" r="4"/><path d="M12 12v8" stroke-linecap="round"/></svg>
+    Chin Tuck
+  </button>
+  <button onclick="showScreen('exercises')" id="nav-exercises">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="6" width="4" height="12" rx="1"/><rect x="17" y="6" width="4" height="12" rx="1"/><path d="M7 12h10" stroke-linecap="round"/></svg>
+    Exercises
+  </button>
+  <button onclick="showScreen('tracker')" id="nav-tracker">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M8 4v4M16 4v4M3 10h18" stroke-linecap="round"/></svg>
+    Tracker
+  </button>
+</nav>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+// CONFIG
+// ═══════════════════════════════════════════════════════════════
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycby80dUsY7H8r-F6FXF6HaudFThCaDglp1Gnkme_9wh7yoOw4FsE2DEF7GNTU8AKLaBW/exec";
+const CHIN_TUCK_TARGET = 8;
+const MILESTONE_DAYS = 42;
+
+// ═══════════════════════════════════════════════════════════════
+// UTILITIES
+// ═══════════════════════════════════════════════════════════════
+function todayStr() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+function log(action, params={}) {
+  const qs = new URLSearchParams({ action, ...params }).toString();
+  fetch(SCRIPT_URL + '?' + qs, { mode: 'no-cors' }).catch(()=>{});
+}
+
+function beep(freq=660, dur=0.1) {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.frequency.value = freq;
+    gain.gain.setValueAtTime(0.25, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + dur);
+    osc.start(); osc.stop(ctx.currentTime + dur);
+  } catch(e) {}
+}
+
+function el(id) { return document.getElementById(id); }
+function showScreen(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+  el('screen-' + name).classList.add('active');
+  el('nav-' + name).classList.add('active');
+  if (name === 'tracker') loadTracker();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// STRETCH TIMER
+// ═══════════════════════════════════════════════════════════════
+const STRETCHES = [
+  { id:1, name:'Kneeling Hip Flexor Stretch', target:'Iliopsoas · Rectus Femoris', sides:true, sets:2, duration:60,
+    instruction:'Kneel on one knee. Brace your core and squeeze the rear glute before leaning forward. Do not arch your lower back.',
+    cue:'Squeeze the rear glute. Keep your torso upright.' },
+  { id:2, name:'Doorway Pec Stretch', target:'Pectoralis Minor', sides:true, sets:2, duration:45,
+    instruction:'Place your forearm on a door frame at 90°. Step gently through the doorway until you feel a stretch across the front of the shoulder and chest.',
+    cue:'Chest forward, shoulder blade back and down.' },
+  { id:3, name:'Chin Tuck', target:'Suboccipital Muscles · Deep Neck Flexors', sides:false, sets:10, duration:10, isChinTuck:true,
+    instruction:'Sit tall. Draw your chin straight back — not down. Think of making a double chin. Hold for 10 seconds, then release.',
+    cue:'Back, not down. Keep your eyes level.' },
+];
+
+function buildStretchQueue() {
+  const q = [];
+  STRETCHES.forEach(s => {
+    if (s.isChinTuck) {
+      for (let r=0; r<s.sets; r++) {
+        q.push({...s, label:`Rep ${r+1} of ${s.sets}`, setNum:r+1, isChinTuckHold:true});
+        if (r < s.sets-1) q.push({isRelease:true, id:`ct-rel-${r}`, name:'Release', duration:3,
+          instruction:'Release. Relax your neck fully before the next rep.', cue:'', target:''});
+      }
+    } else {
+      for (let set=0; set<s.sets; set++) {
+        if (s.sides) {
+          q.push({...s, label:'Left Side', side:'left', setNum:set+1});
+          q.push({...s, label:'Right Side', side:'right', setNum:set+1});
+        } else {
+          q.push({...s, setNum:set+1});
+        }
+      }
+    }
+  });
+  // inject rests
+  const out = [];
+  q.forEach((item, i) => {
+    out.push(item);
+    if (i < q.length-1) {
+      const next = q[i+1];
+      const isInternal = item.isRelease || next.isRelease ||
+        (item.isChinTuck && next.isChinTuck) || (item.isChinTuckHold && next.isChinTuckHold);
+      if (!isInternal) {
+        const same = !item.isRelease && !next.isRelease && next.id === item.id;
+        out.push({isRest:true, id:`rest-${i}`, name:'Rest', duration: same?10:15,
+          instruction: same ? 'Shake it out. Switch sides.' : next.instruction,
+          nextName: same ? null : next.name + (next.label ? ` · ${next.label}` : ''),
+          cue: same ? null : next.cue, target:''});
+      }
+    }
+  });
+  return out;
+}
+
+const STRETCH_QUEUE = buildStretchQueue();
+const STRETCH_TOTAL = STRETCH_QUEUE.reduce((s,i)=>s+i.duration, 0);
+
+let stretchIdx=0, stretchTimeLeft=0, stretchRunning=false, stretchDone=false;
+let stretchTimer=null;
+
+function renderStretch() {
+  const c = STRETCH_QUEUE[stretchIdx];
+  const elapsed = STRETCH_QUEUE.slice(0,stretchIdx).reduce((s,i)=>s+i.duration,0) + (c.duration - stretchTimeLeft);
+  const overallPct = elapsed / STRETCH_TOTAL;
+  const pct = stretchTimeLeft / c.duration;
+
+  let html = '';
+
+  if (stretchDone) {
+    html = `<div class="done-card">
+      <div class="done-title">Session complete</div>
+      <div class="done-sub">~6 minutes · 3 stretches</div>
+      <div class="done-logged">✓ Logged to tracker</div>
+      <button class="btn btn-primary" onclick="resetStretch()">Repeat</button>
+    </div>`;
+    el('stretch-content').innerHTML = html;
+    return;
+  }
+
+  // Progress
+  html += `<div class="progress-wrap">
+    <div class="progress-label"><span>Progress</span><span>${Math.round(overallPct*100)}%</span></div>
+    <div class="progress-bar"><div class="progress-fill" style="width:${overallPct*100}%"></div></div>
+  </div>`;
+
+  // Queue breadcrumb
+  html += '<div style="display:flex;gap:3px;margin-bottom:1.25rem;flex-wrap:nowrap;overflow:hidden;">';
+  STRETCH_QUEUE.forEach((item,i) => {
+    const w = item.isRelease ? '8px' : 'flex:1';
+    const bg = i < stretchIdx ? 'var(--accent)' : i===stretchIdx ? '#b8e04a88' : '#2a2a28';
+    html += `<div style="${item.isRelease?'width:8px':'flex:1'};height:3px;background:${bg};border-radius:2px;transition:background 0.3s;flex-shrink:${item.isRelease?0:1}"></div>`;
+  });
+  html += '</div>';
+
+  // Main card
+  const isRest = c.isRest;
+  const isRelease = c.isRelease;
+  const cardBorder = isRest||isRelease ? 'var(--border)' : '#2e2e2b';
+  html += `<div class="card" style="border-color:${cardBorder};border-radius:10px;padding:1.75rem 1.5rem 1.5rem;margin-bottom:1rem;">`;
+
+  // Tags
+  html += '<div class="tags">';
+  if (!isRest && !isRelease) {
+    const sNum = STRETCHES.findIndex(s=>s.id===c.id)+1;
+    html += `<span class="tag tag-blue">Stretch ${sNum} / ${STRETCHES.length}</span>`;
+  }
+  if (c.side) html += `<span class="tag ${c.side==='left'?'tag-left':'tag-right'}">${c.label}</span>`;
+  if (c.isChinTuckHold) html += `<span class="tag tag-blue">${c.label}</span>`;
+  if (isRest) html += '<span class="tag tag-rest">Rest</span>';
+  if (isRelease) html += '<span class="tag tag-release">Release</span>';
+  if (c.setNum > 1 && !isRest && !isRelease && !c.isChinTuckHold) html += `<span style="font-family:var(--mono);font-size:0.6rem;color:var(--text-muted);">Set ${c.setNum}</span>`;
+  html += '</div>';
+
+  // Name
+  if (c.nextName && isRest) {
+    html += `<div style="font-family:var(--mono);font-size:0.6rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-muted);margin-bottom:0.2rem;">Up next</div>`;
+    html += `<div style="font-family:var(--serif);font-size:1.1rem;font-weight:500;margin-bottom:0.75rem;color:var(--text);">${c.nextName}</div>`;
+  } else if (!isRest) {
+    html += `<div style="font-family:var(--serif);font-size:${isRelease?'1.1':'1.5'}rem;font-weight:${isRelease?300:500};margin-bottom:${c.target?'0.25':'0.75'}rem;color:${isRelease||isRest?'#6a6a5a':'var(--text)'};">${c.name}</div>`;
+    if (c.target) html += `<div style="font-family:var(--mono);font-size:0.65rem;color:var(--text-muted);margin-bottom:1.25rem;">${c.target}</div>`;
+  }
+
+  // Timer + instruction
+  html += '<div style="display:flex;align-items:center;gap:1.5rem;">';
+
+  // Ring
+  const r=54, circ=2*Math.PI*r;
+  const stroke = isRest||isRelease ? '#4a4a3a' : stretchTimeLeft<=5 ? '#e05050' : 'var(--accent)';
+  html += `<div style="position:relative;flex-shrink:0;">
+    <svg width="130" height="130" style="transform:rotate(-90deg)">
+      <circle cx="65" cy="65" r="${r}" fill="none" stroke="#222220" stroke-width="5"/>
+      <circle cx="65" cy="65" r="${r}" fill="none" stroke="${stroke}" stroke-width="5" stroke-linecap="round"
+        stroke-dasharray="${pct*circ} ${circ}" style="transition:stroke-dasharray 1s linear,stroke 0.3s"/>
+    </svg>
+    <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;">
+      <div style="font-family:var(--mono);font-size:2rem;font-weight:500;color:${stretchTimeLeft<=5?'#e05050':'var(--text)'};line-height:1;transition:color 0.3s;">${stretchTimeLeft}</div>
+      <div style="font-family:var(--mono);font-size:0.55rem;color:#4a4a3a;letter-spacing:0.1em;margin-top:0.1rem;">SEC</div>
+    </div>
+  </div>`;
+
+  // Text
+  html += `<div style="flex:1;">
+    <div style="font-size:0.88rem;line-height:1.6;color:#b0ac9e;font-style:italic;">${c.instruction}</div>`;
+  if (c.cue) html += `<div class="cue">↗ ${c.cue}</div>`;
+  html += '</div></div></div>';
+
+  // Controls
+  const isStart = stretchIdx===0 && stretchTimeLeft===STRETCH_QUEUE[0].duration;
+  const label = stretchRunning ? 'Pause' : isStart ? 'Start' : 'Resume';
+  html += `<div class="controls">
+    <button class="btn ${stretchRunning?'btn-secondary':'btn-primary'}" style="flex:2;margin-bottom:0;" onclick="toggleStretch()">${label}</button>
+    <button class="btn btn-secondary btn-icon" onclick="skipStretch()">Skip →</button>
+    <button class="btn btn-ghost btn-icon" onclick="resetStretch()">↺</button>
+  </div>`;
+
+  // Up next bar
+  if (stretchIdx < STRETCH_QUEUE.length-1) {
+    const next = STRETCH_QUEUE[stretchIdx+1];
+    html += `<div class="up-next" style="margin-top:0.75rem;">
+      <div class="up-next-label">Up next</div>
+      <div class="up-next-name">${next.name}${next.label?' · '+next.label:''}</div>
+    </div>`;
+  }
+
+  el('stretch-content').innerHTML = html;
+}
+
+function toggleStretch() {
+  if (stretchDone) return;
+  stretchRunning = !stretchRunning;
+  if (stretchRunning) {
+    stretchTimer = setInterval(() => {
+      stretchTimeLeft--;
+      if (stretchTimeLeft <= 3 && stretchTimeLeft > 0) beep(440, 0.05);
+      if (stretchTimeLeft <= 0) advanceStretch();
+      else renderStretch();
+    }, 1000);
+  } else {
+    clearInterval(stretchTimer);
+    renderStretch();
+  }
+}
+
+function advanceStretch() {
+  clearInterval(stretchTimer);
+  stretchRunning = false;
+  if (stretchIdx < STRETCH_QUEUE.length-1) {
+    beep(660, 0.15);
+    stretchIdx++;
+    stretchTimeLeft = STRETCH_QUEUE[stretchIdx].duration;
+    renderStretch();
+  } else {
+    beep(880, 0.3); setTimeout(()=>beep(1100,0.3),350);
+    stretchDone = true;
+    log('logStretch', {date: todayStr()});
+    renderStretch();
+  }
+}
+
+function skipStretch() {
+  clearInterval(stretchTimer);
+  stretchRunning = false;
+  beep(500, 0.08);
+  if (stretchIdx < STRETCH_QUEUE.length-1) {
+    stretchIdx++;
+    stretchTimeLeft = STRETCH_QUEUE[stretchIdx].duration;
+  }
+  renderStretch();
+}
+
+function resetStretch() {
+  clearInterval(stretchTimer);
+  stretchRunning=false; stretchDone=false; stretchIdx=0;
+  stretchTimeLeft = STRETCH_QUEUE[0].duration;
+  renderStretch();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// CHIN TUCK TIMER
+// ═══════════════════════════════════════════════════════════════
+const CT_REPS=10, CT_HOLD=10, CT_REST=5;
+function buildCTQueue() {
+  const q=[];
+  for(let i=0;i<CT_REPS;i++){
+    q.push({type:'hold',rep:i+1,duration:CT_HOLD});
+    if(i<CT_REPS-1) q.push({type:'rest',rep:i+1,duration:CT_REST});
+  }
+  return q;
+}
+const CT_QUEUE = buildCTQueue();
+const CT_TOTAL = CT_QUEUE.reduce((s,i)=>s+i.duration,0);
+
+let ctIdx=0, ctTimeLeft=0, ctRunning=false, ctDone=false, ctSets=0;
+let ctTimer=null;
+
+function renderCT() {
+  const c = CT_QUEUE[ctIdx];
+  const elapsed = CT_QUEUE.slice(0,ctIdx).reduce((s,i)=>s+i.duration,0) + (c.duration-ctTimeLeft);
+  const overallPct = elapsed/CT_TOTAL;
+  const pct = ctTimeLeft/c.duration;
+  const isHold = c.type==='hold';
+
+  // Update sets counter colour
+  const setsEl = el('ct-sets-today');
+  if (setsEl) {
+    setsEl.textContent = ctSets;
+    setsEl.style.color = ctSets>0 ? 'var(--accent)' : 'var(--text-muted)';
+  }
+
+  let html='';
+
+  if (ctDone) {
+    html = `<div class="done-card">
+      <div class="done-title">Set complete</div>
+      <div class="done-logged">✓ Logged · ${ctSets} set${ctSets!==1?'s':''} today</div>
+      <button class="btn btn-primary" onclick="resetCT()">Another set</button>
+    </div>`;
+    el('chintuck-content').innerHTML = html;
+    return;
+  }
+
+  // Progress
+  html += `<div class="progress-wrap">
+    <div class="progress-label"><span></span><span>${Math.round(overallPct*100)}%</span></div>
+    <div class="progress-bar"><div class="progress-fill" style="width:${overallPct*100}%"></div></div>
+  </div>`;
+
+  // Rep dots
+  html += '<div class="rep-dots">';
+  for(let i=0;i<CT_REPS;i++){
+    const repDone = i+1 < c.rep || (i+1===c.rep && !isHold) || ctDone;
+    const repActive = i+1===c.rep && isHold;
+    html += `<div class="rep-dot${repDone?' done':repActive?' active':''}"></div>`;
+  }
+  html += '</div>';
+
+  // Timer card
+  html += `<div class="timer-card" style="border-color:${isHold?'#2e3a20':'var(--border)'}">
+    <div class="timer-label${isHold?' active':''}">${isHold?`Hold · Rep ${c.rep}`:`Release · Rep ${c.rep} of ${CT_REPS}`}</div>
+    <div class="big-num${ctTimeLeft<=3?' red':''}">${ctTimeLeft}</div>
+    <div class="timer-unit">seconds</div>`;
+
+  // Mini ring
+  const r2=34, circ2=2*Math.PI*r2;
+  html += `<div class="ring-wrap">
+    <svg width="80" height="80" style="transform:rotate(-90deg)">
+      <circle cx="40" cy="40" r="${r2}" fill="none" stroke="#1e1e1c" stroke-width="4"/>
+      <circle cx="40" cy="40" r="${r2}" fill="none" stroke="${isHold?'var(--accent)':'#3a3a30'}" stroke-width="4" stroke-linecap="round"
+        stroke-dasharray="${pct*circ2} ${circ2}" style="transition:stroke-dasharray 1s linear"/>
+    </svg>
+  </div>`;
+
+  html += `<div style="font-family:var(--mono);font-size:0.6rem;color:var(--text-muted);">${isHold?'chin back · eyes level':'relax fully'}</div>`;
+  html += '</div>';
+
+  // Controls
+  const isStart = ctIdx===0 && ctTimeLeft===CT_QUEUE[0].duration;
+  html += `<div class="controls">
+    <button class="btn ${ctRunning?'btn-secondary':'btn-primary'}" style="flex:2;margin-bottom:0;" onclick="toggleCT()">${ctRunning?'Pause':isStart?'Start':'Resume'}</button>
+    <button class="btn btn-ghost btn-icon" onclick="resetCT()">↺</button>
+  </div>
+  <div style="margin-top:0.5rem;">
+    <button class="btn btn-secondary" onclick="manualLogCT()">+1 Set (manual)</button>
+  </div>`;
+
+  el('chintuck-content').innerHTML = html;
+}
+
+function toggleCT() {
+  if (ctDone) return;
+  ctRunning = !ctRunning;
+  if (ctRunning) {
+    ctTimer = setInterval(()=>{
+      ctTimeLeft--;
+      if (ctTimeLeft<=3 && ctTimeLeft>0) beep(440,0.05);
+      if (ctTimeLeft<=0) advanceCT();
+      else renderCT();
+    },1000);
+  } else { clearInterval(ctTimer); renderCT(); }
+}
+
+function advanceCT() {
+  clearInterval(ctTimer); ctRunning=false;
+  if (ctIdx < CT_QUEUE.length-1) {
+    const next = CT_QUEUE[ctIdx+1];
+    beep(next.type==='hold'?660:330, 0.12);
+    ctIdx++; ctTimeLeft=CT_QUEUE[ctIdx].duration;
+    renderCT();
+  } else {
+    beep(880,0.15); setTimeout(()=>beep(1100,0.2),200);
+    ctDone=true; ctSets++;
+    log('logChinTuck',{date:todayStr()});
+    renderCT();
+  }
+}
+
+function manualLogCT() {
+  ctSets++;
+  log('logChinTuck',{date:todayStr()});
+  const s = el('ct-sets-today');
+  if(s){s.textContent=ctSets;s.style.color='var(--accent)';}
+  // Flash confirmation
+  const btn = event.target;
+  btn.textContent='Logged ✓'; btn.disabled=true;
+  setTimeout(()=>{btn.textContent='+1 Set (manual)';btn.disabled=false;},1500);
+}
+
+function resetCT() {
+  clearInterval(ctTimer);
+  ctRunning=false; ctDone=false; ctIdx=0;
+  ctTimeLeft=CT_QUEUE[0].duration;
+  renderCT();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// POSTURE EXERCISES
+// ═══════════════════════════════════════════════════════════════
+const EXERCISES = [
+  { id:'deadbug', name:'Dead Bug', target:'Deep Core · Transverse Abdominis', sets:3, reps:16, rest:45, isHold:false,
+    instruction:'Lie on your back, arms pointing up, knees at 90°. Press your lower back firmly into the floor. Lower your opposite arm and leg slowly, then return. Alternate sides each rep.',
+    cue:'Lower back stays flat. One rep per side, alternate.' },
+  { id:'plank', name:'Plank', target:'Transverse Abdominis · Anti-Extension', sets:3, reps:1, rest:45, isHold:true, duration:30,
+    instruction:'Forearms on the floor, elbows under shoulders. Keep your body in a straight line from head to heels. Lower back flat — do not sag or pike.',
+    cue:'Squeeze your core. Flat back, neutral spine.' },
+  { id:'glutebridge', name:'Glute Bridge', target:'Glutes · Posterior Chain', sets:3, reps:12, rest:45, isHold:false,
+    instruction:'Lie on your back, feet flat, drive hips up squeezing glutes — not your lower back. Hold 2 seconds at the top. Lower with control.',
+    cue:'Squeeze glutes at the top. Hold 2 seconds.' },
+];
+
+function buildExQueue() {
+  const q=[];
+  EXERCISES.forEach(ex=>{
+    for(let set=0;set<ex.sets;set++){
+      q.push({...ex,setNum:set+1});
+      const isLast = set===ex.sets-1 && ex.id===EXERCISES[EXERCISES.length-1].id;
+      if(!isLast){
+        const nextEx = set<ex.sets-1 ? ex : EXERCISES[EXERCISES.indexOf(ex)+1];
+        q.push({isRest:true,id:`rest-${ex.id}-${set}`,name:'Rest',duration:ex.rest,
+          nextName: nextEx.name + (set<ex.sets-1?` · Set ${set+2}`:''),
+          nextInstruction: nextEx.instruction, nextCue: nextEx.cue});
+      }
+    }
+  });
+  return q;
+}
+
+const EX_QUEUE = buildExQueue();
+
+let exIdx=0, exPhase='idle', exReps=0, exRestLeft=0, exHoldLeft=0;
+let exRestTimer=null, exHoldTimer=null;
+
+function renderEx() {
+  const c = EX_QUEUE[exIdx];
+  const doneItems = EX_QUEUE.slice(0,exIdx).filter(q=>!q.isRest).length;
+  const totalItems = EX_QUEUE.filter(q=>!q.isRest).length;
+  const overallPct = totalItems ? doneItems/totalItems : 0;
+
+  let html='';
+
+  if (exPhase==='done') {
+    html = `<div class="done-card">
+      <div class="done-title">Session complete</div>
+      <div class="done-sub">Dead Bug · 3 × 16 alternating</div>
+      <div class="done-sub">Plank · 3 × 30s</div>
+      <div class="done-sub" style="margin-bottom:1.5rem;">Glute Bridge · 3 × 12</div>
+      <div class="done-logged">✓ Logged to tracker</div>
+      <button class="btn btn-primary" onclick="resetEx()">Repeat</button>
+    </div>`;
+    el('exercises-content').innerHTML = html;
+    return;
+  }
+
+  if (exPhase==='idle') {
+    html = EXERCISES.map(ex=>`
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">${ex.name}</div>
+          <div class="card-dose">${ex.isHold ? ex.sets+'×'+ex.duration+'s' : ex.sets+'×'+ex.reps}</div>
+        </div>
+        <div class="card-sub">${ex.target}</div>
+        <div class="card-instruction">${ex.instruction}</div>
+      </div>`).join('');
+    html += '<button class="btn btn-primary" onclick="startEx()">Begin</button>';
+    el('exercises-content').innerHTML = html;
+    return;
+  }
+
+  // Progress bar
+  html += `<div class="progress-wrap">
+    <div class="progress-label"><span>Overall</span><span>${Math.round(overallPct*100)}%</span></div>
+    <div class="progress-bar"><div class="progress-fill" style="width:${overallPct*100}%"></div></div>
+  </div>`;
+
+  if (exPhase==='exercise') {
+    const repPct = c.reps ? exReps/c.reps : 0;
+    html += `<div class="tags">
+      <span class="tag tag-blue">${c.name}</span>
+      <span class="tag tag-grey">Set ${c.setNum} of ${c.sets}</span>
+    </div>
+    <div class="card" style="border-radius:10px;padding:1.5rem;margin-bottom:1rem;text-align:center;">
+      <div style="display:flex;align-items:flex-end;gap:0.5rem;justify-content:center;margin-bottom:0.5rem;">
+        <div style="font-size:5.5rem;font-weight:600;line-height:1;letter-spacing:-0.04em;">${exReps}</div>
+        <div style="font-size:2rem;font-weight:300;color:var(--text-muted);line-height:1;margin-bottom:0.75rem;">/ ${c.reps}</div>
+      </div>
+      <div class="rep-dots">`;
+    for(let i=0;i<c.reps;i++) html+=`<div class="rep-dot${i<exReps?' done':i===exReps?' active':''}"></div>`;
+    html+=`</div>
+      <div style="height:3px;background:#1e1e1c;border-radius:3px;overflow:hidden;margin:1rem 0;">
+        <div style="height:100%;width:${repPct*100}%;background:var(--accent);transition:width 0.2s;border-radius:3px;"></div>
+      </div>
+      <div class="card-instruction">${c.instruction}</div>
+      ${c.cue?`<div class="cue">↗ ${c.cue}</div>`:''}
+    </div>
+    <button class="btn btn-primary" onclick="logRep()">+ Rep</button>
+    <button class="btn btn-ghost" onclick="resetEx()">↺ Restart</button>`;
+  }
+
+  if (exPhase==='hold') {
+    const holdPct = exHoldLeft/c.duration;
+    html += `<div class="tags">
+      <span class="tag tag-blue">${c.name}</span>
+      <span class="tag tag-grey">Set ${c.setNum} of ${c.sets}</span>
+    </div>
+    <div class="timer-card" style="border-color:#2a2e22;margin-bottom:1rem;">
+      <div class="timer-label active">Hold</div>
+      <div class="big-num${exHoldLeft<=5?' red':''}">${exHoldLeft}</div>
+      <div class="timer-unit">seconds</div>
+      <div style="height:3px;background:#1e1e1c;border-radius:3px;overflow:hidden;margin:1rem 0;">
+        <div style="height:100%;width:${holdPct*100}%;background:var(--accent);transition:width 1s linear;border-radius:3px;"></div>
+      </div>
+      <div class="card-instruction">${c.instruction}</div>
+      ${c.cue?`<div class="cue">↗ ${c.cue}</div>`:''}
+    </div>
+    <button class="btn btn-ghost" onclick="resetEx()">↺ Restart</button>`;
+  }
+
+  if (exPhase==='rest') {
+    const restPct = exRestLeft/(c.duration||45);
+    const circ=2*Math.PI*26;
+    html += `<div class="timer-card" style="margin-bottom:1rem;">
+      <div class="timer-label">Rest</div>
+      <div class="big-num${exRestLeft<=5?' red':''}">${exRestLeft}</div>
+      <div class="timer-unit">seconds</div>
+      <div class="ring-wrap">
+        <svg width="64" height="64" style="transform:rotate(-90deg)">
+          <circle cx="32" cy="32" r="26" fill="none" stroke="#1e1e1c" stroke-width="4"/>
+          <circle cx="32" cy="32" r="26" fill="none" stroke="#3a3a30" stroke-width="4" stroke-linecap="round"
+            stroke-dasharray="${restPct*circ} ${circ}" style="transition:stroke-dasharray 1s linear"/>
+        </svg>
+      </div>`;
+    if (c.nextName) {
+      html+=`<div style="font-family:var(--mono);font-size:0.55rem;color:var(--text-muted);text-transform:uppercase;margin-bottom:0.3rem;">Up next</div>
+        <div style="font-family:var(--serif);font-size:1rem;font-weight:500;color:var(--text);margin-bottom:0.4rem;">${c.nextName}</div>
+        <div class="card-instruction">${c.nextInstruction}</div>`;
+    }
+    html+=`</div>
+    <button class="btn btn-secondary" onclick="skipExRest()">Skip Rest →</button>`;
+  }
+
+  el('exercises-content').innerHTML = html;
+}
+
+function startEx() {
+  exPhase='idle'; exIdx=0; exReps=0;
+  goToExIdx(0);
+}
+
+function goToExIdx(i) {
+  clearInterval(exRestTimer); clearInterval(exHoldTimer);
+  if (i>=EX_QUEUE.length) { exPhase='done'; log('logExercise',{date:todayStr()}); renderEx(); return; }
+  exIdx=i; exReps=0;
+  const c=EX_QUEUE[i];
+  if (c.isRest) {
+    exPhase='rest'; exRestLeft=c.duration;
+    renderEx();
+    exRestTimer=setInterval(()=>{
+      exRestLeft--;
+      if(exRestLeft<=3&&exRestLeft>0)beep(440,0.05);
+      if(exRestLeft<=0){clearInterval(exRestTimer);beep(880,0.15);goToExIdx(i+1);}
+      else renderEx();
+    },1000);
+  } else if (c.isHold) {
+    exPhase='hold'; exHoldLeft=c.duration;
+    renderEx();
+    exHoldTimer=setInterval(()=>{
+      exHoldLeft--;
+      if(exHoldLeft<=3&&exHoldLeft>0)beep(440,0.05);
+      if(exHoldLeft<=0){clearInterval(exHoldTimer);beep(880,0.15);goToExIdx(i+1);}
+      else renderEx();
+    },1000);
+  } else {
+    exPhase='exercise'; renderEx();
+  }
+}
+
+function logRep() {
+  beep(660,0.08);
+  exReps++;
+  const c=EX_QUEUE[exIdx];
+  if(exReps>=c.reps){exReps=0;goToExIdx(exIdx+1);}
+  else renderEx();
+}
+
+function skipExRest() {
+  clearInterval(exRestTimer); beep(500,0.08); goToExIdx(exIdx+1);
+}
+
+function resetEx() {
+  clearInterval(exRestTimer); clearInterval(exHoldTimer);
+  exIdx=0; exPhase='idle'; exReps=0; exRestLeft=0; exHoldLeft=0;
+  renderEx();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// TRACKER
+// ═══════════════════════════════════════════════════════════════
+const INSIGHTS = [
+  {day:0, text:"Your hip flexors are likely shortened from prolonged sitting. The first few sessions will feel tight — that resistance is normal and expected."},
+  {day:3, text:"After a few sessions, you may notice it is slightly easier to hold a neutral pelvis when standing. The glute activation is beginning to register."},
+  {day:7, text:"One week in. Some people notice reduced lower back tension at this point — a direct result of the hip flexors releasing their pull on the lumbar spine."},
+  {day:10, text:"Your pectoralis minor should be beginning to lengthen. You may catch yourself sitting taller without consciously trying."},
+  {day:14, text:"Two weeks in. The chin tuck repetitions are building endurance in the deep neck flexors. Forward head posture should feel less natural — a sign the muscles are adapting."},
+  {day:21, text:"Three weeks. Halfway to the structural milestone. Expect to notice reduced neck stiffness after long work sessions. The suboccipital muscles are loosening."},
+  {day:28, text:"Four weeks. Glute activation during running should be more consistent now. Some people feel a perceptible improvement in push-off power at this stage."},
+  {day:35, text:"Five weeks. Your thoracic posture should be visibly improved to people who know you. Rounded shoulders take time — but the pec stretch is working."},
+  {day:42, text:"Six weeks. This is the structural milestone. Soft tissue adaptation is largely complete. The postural changes you have built are now your new baseline."},
+];
+
+function getInsight(n) { return [...INSIGHTS].reverse().find(i=>n>=i.day)||INSIGHTS[0]; }
+
+function getStreak(log) {
+  let streak=0; const today=new Date();
+  for(let i=0;i<365;i++){
+    const d=new Date(today); d.setDate(today.getDate()-i);
+    const s=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    if(log[s]) streak++; else if(i>0) break;
+  }
+  return streak;
+}
+
+function calendarHTML(log, mode='binary', target=8) {
+  const today=new Date();
+  const dow=today.getDay();
+  const startOfWeek=new Date(today);
+  startOfWeek.setDate(today.getDate()-((dow+6)%7));
+  startOfWeek.setHours(0,0,0,0);
+
+  let html='<div class="cal-grid">';
+  ['M','T','W','T','F','S','S'].forEach(d=>{
+    html+=`<div class="cal-day-label">${d}</div>`;
+  });
+
+  for(let w=11;w>=0;w--){
+    for(let d=0;d<7;d++){
+      const day=new Date(startOfWeek);
+      day.setDate(startOfWeek.getDate()-w*7+d);
+      const str=`${day.getFullYear()}-${String(day.getMonth()+1).padStart(2,'0')}-${String(day.getDate()).padStart(2,'0')}`;
+      const isFuture=day>today;
+      const isToday=str===todayStr();
+      if(mode==='binary'){
+        const done=!!log[str];
+        html+=`<div class="cal-cell${isFuture?' future':done?' done':isToday?' today-empty':''}"></div>`;
+      } else {
+        const count=log[str]||0;
+        const p=Math.min(1,count/target);
+        let bg='#1a1a18';
+        if(isFuture) bg='transparent';
+        else if(count>0){
+          const r2=Math.round(30+p*(184-30)),g2=Math.round(60+p*(224-60)),b2=Math.round(20+p*(74-20));
+          bg=`rgb(${r2},${g2},${b2})`;
+        }
+        const border=isToday&&count===0?'border:1px solid #3a3a30;':'';
+        html+=`<div class="cal-cell" style="background:${bg};${border}"></div>`;
+      }
+    }
+  }
+  return html+'</div>';
+}
+
+async function loadTracker() {
+  el('tracker-content').innerHTML='<div style="font-family:var(--mono);font-size:0.65rem;color:var(--text-dim);text-align:center;padding:3rem 0;">Loading from Google Sheets…</div>';
+
+  try {
+    const data = await new Promise((resolve,reject)=>{
+      const cb='_cb'+Math.random().toString(36).slice(2);
+      const url=SCRIPT_URL+'?'+new URLSearchParams({action:'read',callback:cb});
+      let done=false;
+      const timeout=setTimeout(()=>{if(!done){done=true;delete window[cb];reject(new Error('Timed out'));}},15000);
+      window[cb]=(d)=>{if(!done){done=true;clearTimeout(timeout);delete window[cb];const s=document.head.querySelector(`script[src="${url}"]`);if(s)s.remove();resolve(d);}};
+      const s=document.createElement('script');
+      s.src=url;
+      s.onerror=()=>{if(!done){done=true;clearTimeout(timeout);reject(new Error('Network error'));}};
+      document.head.appendChild(s);
+    });
+
+    const stretchLog={}, exerciseLog={}, chinLog={};
+    (data.stretches||[]).forEach(d=>{stretchLog[d]=true;});
+    (data.exercises||[]).forEach(d=>{exerciseLog[d]=true;});
+    Object.entries(data.chinTucks||{}).forEach(([k,v])=>{chinLog[k]=v;});
+
+    const today=todayStr();
+    const stretchDoneToday=!!stretchLog[today];
+    const stretchTotal=Object.keys(stretchLog).length;
+    const stretchStreak=getStreak(stretchLog);
+    const exDoneToday=!!exerciseLog[today];
+    const exTotal=Object.keys(exerciseLog).length;
+    const exStreak=getStreak(exerciseLog);
+    const chinCount=chinLog[today]||0;
+    const insight=getInsight(stretchTotal);
+
+    // milestone
+    const firstDay=Object.keys(stretchLog).sort()[0];
+    let milestoneText='Start first session';
+    let progressPct=0;
+    if(firstDay){
+      const start=new Date(firstDay);
+      const target=new Date(start); target.setDate(start.getDate()+42);
+      const now=new Date(); now.setHours(0,0,0,0);
+      const diff=Math.ceil((target-now)/86400000);
+      milestoneText=diff<=0?'✓ Reached':`${diff}d left`;
+      progressPct=Math.min(100,(stretchTotal/42)*100);
+    }
+
+    let html='';
+
+    // ── STRETCH SECTION ──
+    html+=`<div class="eyebrow">Stretch Protocol</div>
+    <div class="page-title" style="margin-bottom:0.25rem;">Stretches</div>
+    <div style="margin-bottom:1.5rem;"></div>`;
+
+    html+=`<div class="stat-grid">
+      <div class="stat-box"><div class="stat-label">Streak</div><div class="stat-value accent">${stretchStreak}</div><div class="stat-unit">${stretchStreak===1?'day':'days'}</div></div>
+      <div class="stat-box"><div class="stat-label">Total</div><div class="stat-value">${stretchTotal}</div><div class="stat-unit">sessions</div></div>
+      <div class="stat-box"><div class="stat-label">6-Week</div><div class="stat-value" style="font-size:1.2rem;">${milestoneText}</div><div class="stat-unit"> </div></div>
+    </div>`;
+
+    if(firstDay){
+      html+=`<div class="milestone-bar">
+        <div class="milestone-header"><span class="milestone-title">6-Week Milestone</span><span class="milestone-pct">${Math.round(progressPct)}%</span></div>
+        <div class="milestone-fill"><div class="milestone-inner" style="width:${progressPct}%"></div></div>
+      </div>`;
+    }
+
+    // Log button
+    if(stretchDoneToday){
+      html+=`<div class="logged-box"><div class="logged-dot"></div><div><div class="logged-text">Done today</div><div class="logged-date">${new Date().toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'})}</div></div></div>`;
+    } else {
+      html+=`<button class="btn btn-primary" onclick="logStretchToday()">Log Today's Session</button>`;
+    }
+
+    // Insight
+    const nextInsight=INSIGHTS.find(i=>i.day>stretchTotal);
+    const daysToNext=nextInsight?nextInsight.day-stretchTotal:null;
+    html+=`<div class="insight-card">
+      <div class="insight-header">
+        <span class="insight-label">What to expect · Day ${stretchTotal}</span>
+        ${daysToNext!==null?`<span class="insight-next">Next change in ${daysToNext}d</span>`:''}
+      </div>
+      <div class="insight-text">${insight.text}</div>
+    </div>`;
+
+    // Calendar
+    html+=`<div class="cal-section">
+      <div class="cal-title" style="margin-bottom:0.75rem;">Last 12 Weeks</div>
+      ${calendarHTML(stretchLog)}
+      <div class="cal-legend" style="margin-top:0.75rem;">
+        <div class="cal-legend-item"><div class="cal-legend-dot" style="background:var(--accent)"></div><span class="cal-legend-label">Done</span></div>
+        <div class="cal-legend-item"><div class="cal-legend-dot" style="background:#1a1a18"></div><span class="cal-legend-label">Missed</span></div>
+      </div>
+    </div>`;
+
+    // ── EXERCISES SECTION ──
+    html+=`<div class="section-divider">
+      <div class="eyebrow">Strength Protocol</div>
+      <div class="page-title" style="margin-bottom:1.5rem;">Exercises</div>
+    </div>`;
+
+    html+=`<div class="stat-grid" style="grid-template-columns:1fr 1fr;">
+      <div class="stat-box"><div class="stat-label">Streak</div><div class="stat-value accent">${exStreak}</div><div class="stat-unit">${exStreak===1?'day':'days'}</div></div>
+      <div class="stat-box"><div class="stat-label">Total</div><div class="stat-value">${exTotal}</div><div class="stat-unit">sessions</div></div>
+    </div>`;
+
+    if(exDoneToday){
+      html+=`<div class="logged-box"><div class="logged-dot"></div><div><div class="logged-text">Exercises done today</div></div></div>`;
+    } else {
+      html+=`<button class="btn btn-primary" onclick="logExToday()">Log Today's Exercises</button>`;
+    }
+
+    html+=`<div class="cal-section">
+      <div class="cal-title" style="margin-bottom:0.75rem;">Last 12 Weeks</div>
+      ${calendarHTML(exerciseLog)}
+      <div class="cal-legend" style="margin-top:0.75rem;">
+        <div class="cal-legend-item"><div class="cal-legend-dot" style="background:var(--accent)"></div><span class="cal-legend-label">Done</span></div>
+        <div class="cal-legend-item"><div class="cal-legend-dot" style="background:#1a1a18"></div><span class="cal-legend-label">Missed</span></div>
+      </div>
+    </div>`;
+
+    // ── CHIN TUCKS SECTION ──
+    html+=`<div class="section-divider">
+      <div class="eyebrow">Tech Neck Protocol</div>
+      <div class="page-title" style="margin-bottom:1.5rem;">Chin Tucks</div>
+    </div>`;
+
+    html+=`<div class="chin-today">
+      <span class="chin-today-label">Today</span>
+      <div style="display:flex;align-items:baseline;">
+        <span class="chin-today-count" style="color:${chinCount>=CHIN_TUCK_TARGET?'var(--accent)':chinCount>0?'var(--text)':'var(--text-muted)'}">${chinCount}</span>
+        <span class="chin-today-target">/ ${CHIN_TUCK_TARGET}</span>
+      </div>
+    </div>`;
+
+    html+=`<div class="cal-section">
+      <div class="cal-header">
+        <span class="cal-title">Last 12 Weeks</span>
+        <span class="cal-target">Target: ${CHIN_TUCK_TARGET}/day</span>
+      </div>
+      ${calendarHTML(chinLog,'count',CHIN_TUCK_TARGET)}
+      <div class="cal-legend" style="margin-top:0.75rem;">
+        <div class="cal-legend-item"><div class="cal-legend-dot" style="background:#1e3c14"></div><span class="cal-legend-label">1–3 sets</span></div>
+        <div class="cal-legend-item"><div class="cal-legend-dot" style="background:#4a8a2a"></div><span class="cal-legend-label">4–6 sets</span></div>
+        <div class="cal-legend-item"><div class="cal-legend-dot" style="background:var(--accent)"></div><span class="cal-legend-label">${CHIN_TUCK_TARGET}+ sets</span></div>
+      </div>
+    </div>`;
+
+    el('tracker-content').innerHTML=html;
+
+  } catch(e) {
+    el('tracker-content').innerHTML=`<div style="font-family:var(--mono);font-size:0.6rem;color:#e05050;background:#1e1010;border:1px solid #5a1a1a;border-radius:6px;padding:0.9rem;">Could not load data: ${e.message}<br><br>Make sure the Apps Script is deployed and the URL is correct.</div>`;
+  }
+}
+
+function logStretchToday() {
+  log('logStretch',{date:todayStr()});
+  setTimeout(loadTracker,1000);
+}
+
+function logExToday() {
+  log('logExercise',{date:todayStr()});
+  setTimeout(loadTracker,1000);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════════
+resetStretch();
+resetCT();
+resetEx();
+</script>
+</body>
+</html>
